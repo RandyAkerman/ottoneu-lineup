@@ -11,7 +11,7 @@ from selenium.webdriver.common.by import By
 def main():
     roster = get_roster(league_id, team_id)
     fangraph_roster = clean_roster(roster)
-    performance = get_performance(fangraph_roster)
+    performance = [get_performance(y,x) for x,y in zip(roster["FG MajorLeagueID"],roster["name_slug"])]
     standings = get_current_standings()
     lineup = optimize_lineup()
     return(lineup)
@@ -33,9 +33,9 @@ def clean_roster(roster):
 
 def get_performance(player_slug, player_id):
 
-    service = Service(executable_path="/Users/rakerman/Downloads/chromedriver")
-    driver = webdriver.Chrome(service=service)    
-    
+    service = Service(executable_path="/usr/local/bin/chromedriver")
+    driver = webdriver.Chrome(service=service)
+
     url = f"https://www.fangraphs.com/players/{player_slug}/{player_id}"
 
     driver.get(url)
