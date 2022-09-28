@@ -1,4 +1,4 @@
-import argparse
+import os
 # from asyncio.windows_events import NULL
 import pandas as pd
 # import requests
@@ -14,17 +14,21 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 def main():
     roster = get_roster()
     fangraph_roster = clean_roster(roster)
-    performance = [get_performance(y,x) for x,y in zip(roster["FG MajorLeagueID"],roster["name_slug"])]
-    standings = get_current_standings()
-    lineup = optimize_lineup()
-    return(lineup)
+    performance = [get_performance(y,x) for x,y in zip(fangraph_roster["FG MajorLeagueID"],fangraph_roster["name_slug"])]
+    # standings = get_current_standings()
+    # lineup = optimize_lineup()
+    return(performance)
 
-def get_roster(league_id, team_id):
-    url = f"https://ottoneu.fangraphs.com/{LEAGUE_NUMBER}/rosterexport"
+def get_roster():
+
+    league_number = os.getenv("LEAGUE_NUMBER")
+
+    url = f"https://ottoneu.fangraphs.com/{league_number}/rosterexport"
 
     league_roster = pd.read_csv(url)
 
-    team_roster = league_roster.loc[(league_roster.TeamID == TEAM_NUMBER) & (league_roster['FG MajorLeagueID'].notnull())]
+    team_number = int(os.getenv("TEAM_NUMBER"))
+    team_roster = league_roster.loc[(league_roster.TeamID == team_number) & (league_roster['FG MajorLeagueID'].notnull())]
 
     return(team_roster)
 
@@ -34,10 +38,7 @@ def clean_roster(roster):
 
     return(roster)
 
-def login_fangraphs():
-    
-    service = Service(executable_path=CHROME_PATH)
-    driver = webdriver.Chrome(service=service)
+def login_fangraphs(driver):
 
     url = f"https://blogs.fangraphs.com/wp-login.php?redirect_to=https://www.fangraphs.com/"
     
@@ -45,25 +46,25 @@ def login_fangraphs():
 
     account = driver.find_element(By.ID, "user_login")
 
-    account.send_keys(FANGRAPHS_USER)
+    account.send_keys(os.getenv("FANGRAPHS_USER"))
 
     pw = driver.find_element(By.ID, "user_pass")
 
-    pw.send_keys(FANGRAPHS_PASS)
+    pw.send_keys(os.getenv("FANGRAPHS_PASS"))
 
-    driver.find_element_by_id("wp-submit").click()
+    driver.find_element(By.ID,"wp-submit").click()
 
 def get_performance(player_slug, player_id):
 
-    service = Service(executable_path=CHROME_PATH)
+    service = Service(executable_path=os.getenv("CHROME_PATH"))
     driver = webdriver.Chrome(service=service)
+
+    login_fangraphs(driver)
 
     url = f"https://www.fangraphs.com/players/{player_slug}/{player_id}"
 
     driver.get(url)
 
-    login = driver.find_element(By.ID, "linkAccount")
-    #TODO: Sign into fangraphs
     try:
         header = driver.find_element(By.XPATH, "//div[@id='daily-projections']/div[3]/div[@class='fg-data-grid undefined with-selected-rows sort-disabled  ']/div[@class='table-wrapper-outer']/div[@class='table-wrapper-inner']/div[@class='table-scroll']/table/thead")
     except NoSuchElementException:
@@ -93,22 +94,4 @@ def optimize_lineup():
     return(lineup_dict)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument(
-        '--league_id',
-        required=True,
-        type=str,
-        help='League id'
-    )
-
-    parser.add_argument(
-        '--team_id',
-        required=True,
-        type=str,
-        help='team id'
-    )
-
-    args = parser.parse_args()
-
-    main(args.date)
+    main()
