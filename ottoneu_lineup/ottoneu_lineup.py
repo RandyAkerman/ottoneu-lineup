@@ -14,7 +14,7 @@ from selenium.common.exceptions import NoSuchElementException, WebDriverExceptio
 def main():
     roster = get_roster()
     fangraph_roster = clean_roster(roster)
-    performance = [get_performance(y,x) for x,y in zip(fangraph_roster["FG MajorLeagueID"],fangraph_roster["name_slug"])]
+    performance = scrape_fangraphs(fangraph_roster)
     # standings = get_current_standings()
     # lineup = optimize_lineup()
     return(performance)
@@ -33,6 +33,7 @@ def get_roster():
     return(team_roster)
 
 def clean_roster(roster):
+    # TODO: Remove players who are not eligible to play
     roster['name_slug'] = roster.Name.str.lower().str.replace(' ', '-', regex=False)
     roster['FG MajorLeagueID'] = roster['FG MajorLeagueID'].astype('int')
 
@@ -54,12 +55,7 @@ def login_fangraphs(driver):
 
     driver.find_element(By.ID,"wp-submit").click()
 
-def get_performance(player_slug, player_id):
-
-    service = Service(executable_path=os.getenv("CHROME_PATH"))
-    driver = webdriver.Chrome(service=service)
-
-    login_fangraphs(driver)
+def get_performance(driver, player_slug, player_id):
 
     url = f"https://www.fangraphs.com/players/{player_slug}/{player_id}"
 
@@ -82,6 +78,16 @@ def get_performance(player_slug, player_id):
     body_list = [td.text for td in body_values]
     #TODO: Add player info
     performance_dict = dict(zip(header_list,body_list))
+
+    return(performance_dict)
+
+def scrape_fangraphs(fangraph_roster):
+    service = Service(executable_path=os.getenv("CHROME_PATH"))
+    driver = webdriver.Chrome(service=service)
+
+    login_fangraphs(driver)
+
+    performance_dict = [get_performance(driver,y,x) for x,y in zip(fangraph_roster["FG MajorLeagueID"],fangraph_roster["name_slug"])]
 
     return(performance_dict)
 
