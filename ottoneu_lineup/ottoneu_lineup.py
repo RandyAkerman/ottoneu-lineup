@@ -76,8 +76,10 @@ def get_performance(driver, player_slug, player_id):
     body_values = body.find_elements(By.TAG_NAME, 'td')
 
     body_list = [td.text for td in body_values]
-    #TODO: Add player info
+    
     performance_dict = dict(zip(header_list,body_list))
+    player_info = {'player_id': player_id, 'player_slug':player_slug}
+    performance_dict.update(player_info)
 
     return(performance_dict)
 
@@ -89,6 +91,18 @@ def scrape_fangraphs(fangraph_roster):
 
     performance_dict = [get_performance(driver,y,x) for x,y in zip(fangraph_roster["FG MajorLeagueID"],fangraph_roster["name_slug"])]
 
+    filtered_dict = list(filter(None,performance_dict))
+    # TODO: Split between pitchers and batters
+    # TODO: alternative to the above: maybe melt
+    # TODO: Filter out stats that ottoneu cares about
+    # Hitters: PA	R	HR	OBP	SLG available (R,HR)
+    # TODO: Develop OBP and SLG proxy
+    # OBP = (Hits + Walks + Hit by Pitch) / (At Bats + Walks + Hit by Pitch + Sacrifice Flies)
+    # SLG = (1B + 2Bx2 + 3Bx3 + HRx4)/AB
+    # Pitchers: IP	K	HR9	ERA	WHIP available (IP,K,HR, BB)
+    # TODO: Develop ERA proxy
+    # ERA = 9 x earned runs / innings pitched
+    # WHIP = adding the number of walks and hits allowed and dividing this sum by the number of innings pitched
     return(performance_dict)
 
 def get_current_standings():
