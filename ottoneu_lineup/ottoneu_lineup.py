@@ -1,14 +1,10 @@
 import os
-# from asyncio.windows_events import NULL
 import pandas as pd
-# import requests
-# from bs4 import BeautifulSoup
-# from selenium import webdriver
 from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
-# from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from constants import STATS
 
 
 def main():
@@ -93,17 +89,31 @@ def scrape_fangraphs(fangraph_roster):
 
     filtered_dict = list(filter(None,performance_dict))
     # TODO: Split between pitchers and batters
-    # TODO: alternative to the above: maybe melt
-    # TODO: Filter out stats that ottoneu cares about
+    filtered_stats = [{key : val for key, val in sub.items() if key in STATS} for sub in filtered_dict]
     # Hitters: PA	R	HR	OBP	SLG available (R,HR)
     # TODO: Develop OBP and SLG proxy
     # OBP = (Hits + Walks + Hit by Pitch) / (At Bats + Walks + Hit by Pitch + Sacrifice Flies)
-    # SLG = (1B + 2Bx2 + 3Bx3 + HRx4)/AB
+    # SLG = (1B + 2Bx2 + 3Bx3 + HRx4)/AB #NOTE: Isn't AB just 1B+2B+3B+HR+SO+BB?
     # Pitchers: IP	K	HR9	ERA	WHIP available (IP,K,HR, BB)
     # TODO: Develop ERA proxy
     # ERA = 9 x earned runs / innings pitched
     # WHIP = adding the number of walks and hits allowed and dividing this sum by the number of innings pitched
-    return(performance_dict)
+
+    # Split pitchers and batters
+    batters = []
+    pitchers = []
+
+    for i in range(len(filtered_stats)):
+        if 'Pos' in filtered_stats[i].keys():
+            batters.append(filtered_stats[i])
+        else:
+            pitchers.append(filtered_stats[i])
+
+    performance = dict()
+    performance['batters'] = batters
+    performance['pitchers'] = pitchers
+
+    return(performance)
 
 def get_current_standings():
     # need to determine what scoring categories team needs the most help with
