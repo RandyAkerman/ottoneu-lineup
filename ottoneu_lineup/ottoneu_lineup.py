@@ -4,6 +4,8 @@ from selenium.webdriver.chrome.service import Service
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.common.exceptions import NoSuchElementException, WebDriverException
+from selenium.webdriver.chrome.options import Options
+import pickle
 from constants import STATS
 
 
@@ -81,7 +83,9 @@ def get_performance(driver, player_slug, player_id):
 
 def scrape_fangraphs(fangraph_roster):
     service = Service(executable_path=os.getenv("CHROME_PATH"))
-    driver = webdriver.Chrome(service=service)
+    options = Options()
+    # options.add_argument("--headless")
+    driver = webdriver.Chrome(service=service, options=options)
 
     login_fangraphs(driver)
 
@@ -112,16 +116,8 @@ def scrape_fangraphs(fangraph_roster):
     performance = dict()
     performance['batters'] = batters
     performance['pitchers'] = pitchers
-
+    pickle.dump(performance, open('tmp/performance.pickle', 'wb'))
     return(performance)
-
-def get_current_standings():
-    # need to determine what scoring categories team needs the most help with
-    return(standings)
-
-def optimize_lineup():
-    # based on the players available, their likely performance and the team scoring needs return the best lineup
-    return(lineup_dict)
 
 if __name__ == '__main__':
     main()
